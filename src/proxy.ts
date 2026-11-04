@@ -1,13 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// Refresca la sesión de Supabase. Todavía no protege rutas.
+// Refresca la sesión de Supabase y manda a /login a quien no la tenga.
 export async function proxy(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-  // Sin credenciales cargadas, la app corre sin sesión.
-  if (!url || !key) return NextResponse.next();
+  if (!url || !key) {
+    return new NextResponse("Faltan las variables de Supabase", { status: 500 });
+  }
 
   let response = NextResponse.next({ request });
 
@@ -29,13 +30,26 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  return response;
+  const enLogin = request.nextUrl.pathname === "/login";
+  if (user && !enLogin) return response;
+  if (!user && enLogin) return response;
+
+  const destino = request.nextUrl.clone();
+  destino.pathname = user ? "/" : "/login";
+  destino.search = "";
+
+  const redireccion = NextResponse.redirect(destino);
+  response.cookies.getAll().forEach((cookie) => redireccion.cookies.set(cookie));
+  return redireccion;
 }
 
 export const config = {
+  // El cron se autentica con CRON_SECRET, no con sesión.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|.*\\.(?:png|svg|ico)$).*)",
+    "/((?!api/cron|_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|.*\\.(?:png|svg|ico)$).*)",
   ],
 };

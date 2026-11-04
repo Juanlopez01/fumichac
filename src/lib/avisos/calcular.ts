@@ -47,7 +47,7 @@ export function sumarDias(fecha: string, dias: number): string {
   return new Date(Date.parse(fecha) + dias * MS_POR_DIA).toISOString().slice(0, 10);
 }
 
-function formatearFecha(fecha: string): string {
+export function formatearFecha(fecha: string): string {
   const [anio, mes, dia] = fecha.split("-");
   return `${dia}/${mes}/${anio}`;
 }
