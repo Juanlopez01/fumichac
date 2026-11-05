@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { CamposFumigacion } from "@/components/CamposFumigacion";
 import { Formulario } from "@/components/Formulario";
-import { AreaTexto, Campo, Cargando, DatosDelLocal, Titulo } from "@/components/ui";
+import { Cargando, DatosDelLocal, Titulo } from "@/components/ui";
 import { crearFumigacion } from "@/lib/acciones";
 import { hoyArgentina } from "@/lib/avisos/calcular";
 import { createClient } from "@/lib/supabase/server";
@@ -31,10 +32,7 @@ async function Contenido({ params }: { params: Parametros }) {
       <Titulo volver={`/locales/${id}`}>Nueva fumigación</Titulo>
       <DatosDelLocal nombre={local.nombre} direccion={local.direccion} />
       <Formulario accion={crearFumigacion.bind(null, id)} textoBoton="Guardar fumigación">
-        <Campo etiqueta="Fecha" name="fecha" type="date" defaultValue={hoyArgentina()} required />
-        <Campo etiqueta="Veneno utilizado" name="veneno" required />
-        <Campo etiqueta="Quiénes fueron" name="operarios" required />
-        <AreaTexto etiqueta="Anotaciones" name="anotaciones" />
+        <CamposFumigacion hoy={hoyArgentina()} />
       </Formulario>
     </>
   );

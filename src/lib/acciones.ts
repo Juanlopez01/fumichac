@@ -100,11 +100,7 @@ export async function borrarLocal(id: string): Promise<EstadoForm> {
   redirect("/locales");
 }
 
-export async function crearFumigacion(
-  localId: string,
-  _: EstadoForm,
-  datos: FormData,
-): Promise<EstadoForm> {
+function leerFumigacion(datos: FormData) {
   const fecha = texto(datos, "fecha");
   const veneno = texto(datos, "veneno");
   const operarios = texto(datos, "operarios");
@@ -112,16 +108,59 @@ export async function crearFumigacion(
   if (!veneno) return { error: "Falta el veneno utilizado." };
   if (!operarios) return { error: "Falta indicar quiénes fueron." };
 
+  return {
+    valores: { fecha, veneno, operarios, anotaciones: texto(datos, "anotaciones") || null },
+  };
+}
+
+/** Da por leídos los avisos que dejaron de ser ciertos, para que no queden con datos viejos. */
+async function descartarAvisos(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  filtro: { certificado_id: string } | { local_id: string; tipo: "fumigacion" },
+) {
+  const { error } = await supabase
+    .from("avisos")
+    .update({ leido_at: new Date().toISOString() })
+    .is("leido_at", null)
+    .match(filtro);
+  if (error) console.error("No se pudieron descartar avisos", error);
+}
+
+export async function crearFumigacion(
+  localId: string,
+  _: EstadoForm,
+  datos: FormData,
+): Promise<EstadoForm> {
+  const { valores, error: invalido } = leerFumigacion(datos);
+  if (!valores) return { error: invalido };
+
   const supabase = await createClient();
-  const { error } = await supabase.from("fumigaciones").insert({
-    local_id: localId,
-    fecha,
-    veneno,
-    operarios,
-    anotaciones: texto(datos, "anotaciones") || null,
-  });
+  const { error } = await supabase.from("fumigaciones").insert({ local_id: localId, ...valores });
   if (error) return { error: ERROR_GUARDAR };
 
+  await descartarAvisos(supabase, { local_id: localId, tipo: "fumigacion" });
+  refrescar();
+  redirect(`/locales/${localId}`);
+}
+
+export async function editarFumigacion(
+  id: string,
+  localId: string,
+  _: EstadoForm,
+  datos: FormData,
+): Promise<EstadoForm> {
+  const { valores, error: invalido } = leerFumigacion(datos);
+  if (!valores) return { error: invalido };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("fumigaciones")
+    .update(valores)
+    .eq("id", id)
+    .eq("local_id", localId);
+  if (error) return { error: ERROR_GUARDAR };
+
+  await descartarAvisos(supabase, { local_id: localId, tipo: "fumigacion" });
   refrescar();
   redirect(`/locales/${localId}`);
 }
@@ -135,23 +174,31 @@ export async function borrarFumigacion(id: string): Promise<EstadoForm> {
   return {};
 }
 
-export async function registrarCertificado(certificado: {
+type DatosCertificado = {
   local_id: string;
   fumigacion_id: string | null;
   fecha: string;
   vencimiento: string;
   realizado_por: string;
   archivo_path: string | null;
-}): Promise<EstadoForm> {
-  if (!esFecha(certificado.fecha)) return { error: "Falta la fecha del certificado." };
-  if (!esFecha(certificado.vencimiento)) return { error: "Falta la fecha de vencimiento." };
+};
+
+function validarCertificado(certificado: DatosCertificado): string | null {
+  if (!esFecha(certificado.fecha)) return "Falta la fecha del certificado.";
+  if (!esFecha(certificado.vencimiento)) return "Falta la fecha de vencimiento.";
   if (certificado.vencimiento < certificado.fecha) {
-    return { error: "El vencimiento no puede ser anterior a la fecha del certificado." };
+    return "El vencimiento no puede ser anterior a la fecha del certificado.";
   }
-  if (!certificado.realizado_por.trim()) return { error: "Falta indicar quién lo hizo." };
+  if (!certificado.realizado_por.trim()) return "Falta indicar quién lo hizo.";
   if (certificado.archivo_path && !certificado.archivo_path.startsWith(`${certificado.local_id}/`)) {
-    return { error: "El archivo no corresponde a este local." };
+    return "El archivo no corresponde a este local.";
   }
+  return null;
+}
+
+export async function registrarCertificado(certificado: DatosCertificado): Promise<EstadoForm> {
+  const invalido = validarCertificado(certificado);
+  if (invalido) return { error: invalido };
 
   const supabase = await createClient();
   const { error } = await supabase.from("certificados").insert(certificado);
@@ -159,6 +206,46 @@ export async function registrarCertificado(certificado: {
 
   refrescar();
   redirect(`/locales/${certificado.local_id}`);
+}
+
+/** `archivo_path` en null conserva el archivo actual; con una ruta nueva, reemplaza y borra el anterior. */
+export async function editarCertificado(
+  id: string,
+  certificado: DatosCertificado,
+): Promise<EstadoForm> {
+  const invalido = validarCertificado(certificado);
+  if (invalido) return { error: invalido };
+
+  const { local_id, archivo_path, ...cambios } = certificado;
+  const supabase = await createClient();
+
+  const { data: actual, error: errorLectura } = await supabase
+    .from("certificados")
+    .select("vencimiento, archivo_path")
+    .eq("id", id)
+    .eq("local_id", local_id)
+    .maybeSingle();
+  if (errorLectura || !actual) return { error: ERROR_GUARDAR };
+
+  const { error } = await supabase
+    .from("certificados")
+    .update(archivo_path ? { ...cambios, archivo_path } : cambios)
+    .eq("id", id)
+    .eq("local_id", local_id);
+  if (error) return { error: ERROR_GUARDAR };
+
+  if (archivo_path && actual.archivo_path) {
+    const { error: errorBorrado } = await supabase.storage
+      .from("certificados")
+      .remove([actual.archivo_path]);
+    if (errorBorrado) console.error("No se pudo borrar el archivo anterior", errorBorrado);
+  }
+  if (actual.vencimiento !== certificado.vencimiento) {
+    await descartarAvisos(supabase, { certificado_id: id });
+  }
+
+  refrescar();
+  redirect(`/locales/${local_id}`);
 }
 
 export async function cambiarArchivado(id: string, archivado: boolean): Promise<EstadoForm> {

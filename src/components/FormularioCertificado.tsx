@@ -3,9 +3,9 @@
 import { useState, type FormEvent } from "react";
 import { Campo, claseBoton, MensajeError, Selector } from "@/components/ui";
 import { formatearFecha } from "@/lib/avisos/calcular";
-import { registrarCertificado } from "@/lib/acciones";
+import { editarCertificado, registrarCertificado } from "@/lib/acciones";
 import { createClient } from "@/lib/supabase/client";
-import type { Fumigacion } from "@/lib/tipos";
+import type { Certificado, Fumigacion } from "@/lib/tipos";
 
 const EXTENSIONES: Record<string, string> = {
   "application/pdf": "pdf",
@@ -21,9 +21,11 @@ type Props = {
   localId: string;
   fumigaciones: Pick<Fumigacion, "id" | "fecha">[];
   hoy: string;
+  /** Con un certificado, el formulario lo edita en lugar de crear uno nuevo. */
+  certificado?: Certificado;
 };
 
-export function FormularioCertificado({ localId, fumigaciones, hoy }: Props) {
+export function FormularioCertificado({ localId, fumigaciones, hoy, certificado }: Props) {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -70,14 +72,17 @@ export function FormularioCertificado({ localId, fumigaciones, hoy }: Props) {
       }
     }
 
-    const resultado = await registrarCertificado({
+    const valores = {
       local_id: localId,
       fumigacion_id: String(datos.get("fumigacion_id") ?? "") || null,
       fecha,
       vencimiento,
       realizado_por: String(datos.get("realizado_por") ?? ""),
       archivo_path: ruta,
-    });
+    };
+    const resultado = certificado
+      ? await editarCertificado(certificado.id, valores)
+      : await registrarCertificado(valores);
 
     // Si salió bien, la acción ya redirigió.
     if (resultado?.error) {
@@ -89,10 +94,31 @@ export function FormularioCertificado({ localId, fumigaciones, hoy }: Props) {
 
   return (
     <form onSubmit={enviar} className="flex flex-col gap-4">
-      <Campo etiqueta="Quién lo hizo" name="realizado_por" required />
-      <Campo etiqueta="Fecha" name="fecha" type="date" defaultValue={hoy} required />
-      <Campo etiqueta="Fecha de vencimiento" name="vencimiento" type="date" required />
-      <Selector etiqueta="Fumigación relacionada" name="fumigacion_id" defaultValue="">
+      <Campo
+        etiqueta="Quién lo hizo"
+        name="realizado_por"
+        defaultValue={certificado?.realizado_por ?? ""}
+        required
+      />
+      <Campo
+        etiqueta="Fecha"
+        name="fecha"
+        type="date"
+        defaultValue={certificado?.fecha ?? hoy}
+        required
+      />
+      <Campo
+        etiqueta="Fecha de vencimiento"
+        name="vencimiento"
+        type="date"
+        defaultValue={certificado?.vencimiento}
+        required
+      />
+      <Selector
+        etiqueta="Fumigación relacionada"
+        name="fumigacion_id"
+        defaultValue={certificado?.fumigacion_id ?? ""}
+      >
         <option value="">Ninguna</option>
         {fumigaciones.map((f) => (
           <option key={f.id} value={f.id}>
@@ -102,14 +128,18 @@ export function FormularioCertificado({ localId, fumigaciones, hoy }: Props) {
       </Selector>
       <Campo
         etiqueta="Archivo"
-        ayuda="PDF o foto, hasta 10 MB."
+        ayuda={
+          certificado?.archivo_path
+            ? "Ya tiene un archivo. Elegí otro solo si querés reemplazarlo (PDF o foto, hasta 10 MB)."
+            : "PDF o foto, hasta 10 MB."
+        }
         name="archivo"
         type="file"
         accept={Object.keys(EXTENSIONES).join(",")}
       />
       {error && <MensajeError>{error}</MensajeError>}
       <button type="submit" disabled={enviando} className={claseBoton}>
-        {enviando ? "Guardando…" : "Guardar certificado"}
+        {enviando ? "Guardando…" : certificado ? "Guardar cambios" : "Guardar certificado"}
       </button>
     </form>
   );

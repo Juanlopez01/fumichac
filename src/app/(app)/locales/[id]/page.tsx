@@ -120,6 +120,12 @@ async function Contenido({ params }: { params: PageProps<"/locales/[id]">["param
                 </p>
               )}
               <div className="flex flex-wrap gap-2">
+                <Link
+                  href={`/locales/${id}/certificados/${c.id}/editar`}
+                  className={claseBotonSecundario}
+                >
+                  Editar
+                </Link>
                 {c.archivo_path && (
                   <a
                     href={`/certificados/${c.id}/archivo`}
@@ -154,7 +160,13 @@ async function Contenido({ params }: { params: PageProps<"/locales/[id]">["param
             <Dato etiqueta="Veneno utilizado">{f.veneno}</Dato>
             <Dato etiqueta="Quiénes fueron">{f.operarios}</Dato>
             <Dato etiqueta="Anotaciones">{f.anotaciones}</Dato>
-            <div>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href={`/locales/${id}/fumigaciones/${f.id}/editar`}
+                className={claseBotonSecundario}
+              >
+                Editar
+              </Link>
               <BotonAccion
                 accion={borrarFumigacion.bind(null, f.id)}
                 confirmacion={`¿Borrar la fumigación del ${formatearFecha(f.fecha)}?`}
