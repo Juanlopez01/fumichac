@@ -26,11 +26,19 @@ function leerLocal(datos: FormData) {
   const frecuencia = texto(datos, "frecuencia_dias");
   const frecuencia_dias = frecuencia === "" ? null : Number(frecuencia);
 
-  if (!nombre) return { error: "Falta el nombre del local." };
+  if (!nombre) return { error: "Falta el apellido y nombre o la razón social." };
   if (frecuencia_dias !== null && (!Number.isInteger(frecuencia_dias) || frecuencia_dias < 1)) {
     return { error: "La frecuencia tiene que ser una cantidad de días mayor a 0." };
   }
-  return { valores: { nombre, direccion: texto(datos, "direccion") || null, frecuencia_dias } };
+  return {
+    valores: {
+      nombre,
+      direccion: texto(datos, "direccion") || null,
+      rubro: texto(datos, "rubro") || null,
+      telefono: texto(datos, "telefono") || null,
+      frecuencia_dias,
+    },
+  };
 }
 
 export async function iniciarSesion(_: EstadoForm, datos: FormData): Promise<EstadoForm> {
@@ -98,12 +106,18 @@ export async function crearFumigacion(
   datos: FormData,
 ): Promise<EstadoForm> {
   const fecha = texto(datos, "fecha");
+  const veneno = texto(datos, "veneno");
+  const operarios = texto(datos, "operarios");
   if (!esFecha(fecha)) return { error: "Falta la fecha de la fumigación." };
+  if (!veneno) return { error: "Falta el veneno utilizado." };
+  if (!operarios) return { error: "Falta indicar quiénes fueron." };
 
   const supabase = await createClient();
   const { error } = await supabase.from("fumigaciones").insert({
     local_id: localId,
     fecha,
+    veneno,
+    operarios,
     anotaciones: texto(datos, "anotaciones") || null,
   });
   if (error) return { error: ERROR_GUARDAR };
@@ -124,10 +138,17 @@ export async function borrarFumigacion(id: string): Promise<EstadoForm> {
 export async function registrarCertificado(certificado: {
   local_id: string;
   fumigacion_id: string | null;
+  fecha: string;
   vencimiento: string;
+  realizado_por: string;
   archivo_path: string | null;
 }): Promise<EstadoForm> {
+  if (!esFecha(certificado.fecha)) return { error: "Falta la fecha del certificado." };
   if (!esFecha(certificado.vencimiento)) return { error: "Falta la fecha de vencimiento." };
+  if (certificado.vencimiento < certificado.fecha) {
+    return { error: "El vencimiento no puede ser anterior a la fecha del certificado." };
+  }
+  if (!certificado.realizado_por.trim()) return { error: "Falta indicar quién lo hizo." };
   if (certificado.archivo_path && !certificado.archivo_path.startsWith(`${certificado.local_id}/`)) {
     return { error: "El archivo no corresponde a este local." };
   }

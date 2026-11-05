@@ -22,7 +22,7 @@ async function Contenido({ params }: { params: Parametros }) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("locales")
-    .select("id, nombre, direccion, frecuencia_dias")
+    .select("id, nombre, direccion, rubro, telefono, frecuencia_dias")
     .eq("id", id)
     .maybeSingle();
   if (error || !data) notFound();

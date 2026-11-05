@@ -87,6 +87,33 @@ export function Tarjeta({ children }: { children: ReactNode }) {
   );
 }
 
+/** Dato con su etiqueta. Si no hay valor, no muestra nada. */
+export function Dato({ etiqueta, children }: { etiqueta: string; children: ReactNode }) {
+  if (!children) return null;
+  return (
+    <p>
+      <span className="text-zinc-600 dark:text-zinc-400">{etiqueta}: </span>
+      <span className="whitespace-pre-wrap">{children}</span>
+    </p>
+  );
+}
+
+/** Nombre y dirección del local, para que el formulario muestre a quién corresponde la carga. */
+export function DatosDelLocal({
+  nombre,
+  direccion,
+}: {
+  nombre: string;
+  direccion: string | null;
+}) {
+  return (
+    <Tarjeta>
+      <Dato etiqueta="Apellido y nombre / Razón social">{nombre}</Dato>
+      <Dato etiqueta="Dirección">{direccion}</Dato>
+    </Tarjeta>
+  );
+}
+
 export function Cargando() {
   return <p className="text-zinc-600 dark:text-zinc-400">Cargando…</p>;
 }

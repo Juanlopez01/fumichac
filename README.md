@@ -4,7 +4,7 @@ PWA para una empresa de fumigación: locales, fumigaciones con anotaciones, cert
 
 ## Puesta en marcha
 
-1. Crear el proyecto en Supabase y correr `supabase/migrations/0001_base.sql`.
+1. Crear el proyecto en Supabase y correr, en orden, los archivos de `supabase/migrations/`.
 2. **Desactivar el registro público** en Authentication > Sign In / Providers. Todo usuario logueado ve y edita todos los datos, así que las cuentas se crean solo desde el panel de Supabase.
 3. Copiar `.env.example` a `.env.local` y completarlo. Las claves de push se generan con `npx web-push generate-vapid-keys`; `VAPID_SUBJECT` es un `mailto:` de contacto.
 4. Correr `npm install` y `npm run dev`.

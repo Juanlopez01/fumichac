@@ -20,9 +20,10 @@ const TAMANIO_MAXIMO = 10 * 1024 * 1024;
 type Props = {
   localId: string;
   fumigaciones: Pick<Fumigacion, "id" | "fecha">[];
+  hoy: string;
 };
 
-export function FormularioCertificado({ localId, fumigaciones }: Props) {
+export function FormularioCertificado({ localId, fumigaciones, hoy }: Props) {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -31,6 +32,14 @@ export function FormularioCertificado({ localId, fumigaciones }: Props) {
     const datos = new FormData(evento.currentTarget);
     const archivo = datos.get("archivo") as File | null;
     const hayArchivo = archivo !== null && archivo.size > 0;
+    const fecha = String(datos.get("fecha") ?? "");
+    const vencimiento = String(datos.get("vencimiento") ?? "");
+
+    // Se valida antes de subir el archivo, para no subirlo en vano.
+    if (vencimiento < fecha) {
+      setError("El vencimiento no puede ser anterior a la fecha del certificado.");
+      return;
+    }
 
     if (hayArchivo && !EXTENSIONES[archivo.type]) {
       setError("El archivo tiene que ser PDF o imagen (JPG, PNG, WEBP o HEIC).");
@@ -64,7 +73,9 @@ export function FormularioCertificado({ localId, fumigaciones }: Props) {
     const resultado = await registrarCertificado({
       local_id: localId,
       fumigacion_id: String(datos.get("fumigacion_id") ?? "") || null,
-      vencimiento: String(datos.get("vencimiento") ?? ""),
+      fecha,
+      vencimiento,
+      realizado_por: String(datos.get("realizado_por") ?? ""),
       archivo_path: ruta,
     });
 
@@ -78,6 +89,8 @@ export function FormularioCertificado({ localId, fumigaciones }: Props) {
 
   return (
     <form onSubmit={enviar} className="flex flex-col gap-4">
+      <Campo etiqueta="Quién lo hizo" name="realizado_por" required />
+      <Campo etiqueta="Fecha" name="fecha" type="date" defaultValue={hoy} required />
       <Campo etiqueta="Fecha de vencimiento" name="vencimiento" type="date" required />
       <Selector etiqueta="Fumigación relacionada" name="fumigacion_id" defaultValue="">
         <option value="">Ninguna</option>

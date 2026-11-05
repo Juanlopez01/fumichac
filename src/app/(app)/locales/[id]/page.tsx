@@ -6,6 +6,7 @@ import {
   Cargando,
   claseBoton,
   claseBotonSecundario,
+  Dato,
   Etiqueta,
   EtiquetaVencimiento,
   Seccion,
@@ -33,17 +34,17 @@ async function Contenido({ params }: { params: PageProps<"/locales/[id]">["param
   const [local, fumigaciones, certificados] = await Promise.all([
     supabase
       .from("locales")
-      .select("id, nombre, direccion, frecuencia_dias")
+      .select("id, nombre, direccion, rubro, telefono, frecuencia_dias")
       .eq("id", id)
       .maybeSingle(),
     supabase
       .from("fumigaciones")
-      .select("id, fecha, anotaciones")
+      .select("id, fecha, veneno, operarios, anotaciones")
       .eq("local_id", id)
       .order("fecha", { ascending: false }),
     supabase
       .from("certificados")
-      .select("id, local_id, fumigacion_id, vencimiento, archivo_path, archivado")
+      .select("id, local_id, fumigacion_id, fecha, vencimiento, realizado_por, archivo_path, archivado")
       .eq("local_id", id)
       .order("vencimiento", { ascending: false }),
   ]);
@@ -53,7 +54,7 @@ async function Contenido({ params }: { params: PageProps<"/locales/[id]">["param
   if (fumigaciones.error) throw fumigaciones.error;
   if (certificados.error) throw certificados.error;
 
-  const { nombre, direccion, frecuencia_dias } = local.data as Local;
+  const { nombre, direccion, rubro, telefono, frecuencia_dias } = local.data as Local;
   const listaFumigaciones = fumigaciones.data as Fumigacion[];
   const listaCertificados = certificados.data as Certificado[];
   const fechaDeFumigacion = new Map(listaFumigaciones.map((f) => [f.id, f.fecha]));
@@ -63,7 +64,15 @@ async function Contenido({ params }: { params: PageProps<"/locales/[id]">["param
     <>
       <div className="flex flex-col gap-2">
         <Titulo volver="/locales">{nombre}</Titulo>
-        {direccion && <p className="text-zinc-600 dark:text-zinc-400">{direccion}</p>}
+        <Dato etiqueta="Dirección">{direccion}</Dato>
+        <Dato etiqueta="Rubro">{rubro}</Dato>
+        <Dato etiqueta="Teléfono">
+          {telefono && (
+            <a href={`tel:${telefono}`} className="text-green-800 underline dark:text-green-400">
+              {telefono}
+            </a>
+          )}
+        </Dato>
         <p className="text-zinc-600 dark:text-zinc-400">
           {frecuencia_dias
             ? `Avisa a los ${frecuencia_dias} días de la última fumigación`
@@ -103,6 +112,8 @@ async function Contenido({ params }: { params: PageProps<"/locales/[id]">["param
                   <EtiquetaVencimiento dias={diasEntre(hoy, c.vencimiento)} />
                 )}
               </div>
+              <Dato etiqueta="Fecha">{formatearFecha(c.fecha)}</Dato>
+              <Dato etiqueta="Quién lo hizo">{c.realizado_por}</Dato>
               {fumigacion && (
                 <p className="text-zinc-600 dark:text-zinc-400">
                   De la fumigación del {formatearFecha(fumigacion)}
@@ -140,7 +151,9 @@ async function Contenido({ params }: { params: PageProps<"/locales/[id]">["param
         {listaFumigaciones.map((f) => (
           <Tarjeta key={f.id}>
             <span className="font-medium">{formatearFecha(f.fecha)}</span>
-            {f.anotaciones && <p className="whitespace-pre-wrap">{f.anotaciones}</p>}
+            <Dato etiqueta="Veneno utilizado">{f.veneno}</Dato>
+            <Dato etiqueta="Quiénes fueron">{f.operarios}</Dato>
+            <Dato etiqueta="Anotaciones">{f.anotaciones}</Dato>
             <div>
               <BotonAccion
                 accion={borrarFumigacion.bind(null, f.id)}
