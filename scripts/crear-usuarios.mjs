@@ -1,21 +1,15 @@
-// Crea usuarios y muestra sus contraseñas en la terminal. No guarda nada en archivos.
+// Crea usuarios con contraseña nombre + "fumichac" (por ejemplo, anafumichac).
 //
 //   node --env-file=.env.local scripts/crear-usuarios.mjs ana pedro
 //   node --env-file=.env.local scripts/crear-usuarios.mjs --resetear ana
 //
 // Los mails no existen (ana@fumichac.local) y solo sirven para entrar a la app. Como no reciben
-// correo, una contraseña olvidada se cambia con --resetear.
+// correo, --resetear vuelve a poner la contraseña con ese formato.
 
-import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 
 const DOMINIO = "fumichac.local";
-const ALFABETO = "abcdefghjkmnpqrstuvwxyz23456789";
-
-function generarContrasena() {
-  const letras = Array.from(randomBytes(12), (byte) => ALFABETO[byte % ALFABETO.length]).join("");
-  return `${letras.slice(0, 4)}-${letras.slice(4, 8)}-${letras.slice(8)}`;
-}
+const SUFIJO = "fumichac";
 
 const argumentos = process.argv.slice(2);
 const resetear = argumentos.includes("--resetear");
@@ -50,7 +44,7 @@ let fallas = 0;
 for (const nombre of nombres) {
   const email = `${nombre}@${DOMINIO}`;
   const id = existentes.get(email);
-  const password = generarContrasena();
+  const password = `${nombre}${SUFIJO}`;
 
   if (id && !resetear) {
     console.log(`${email}  ya existe, no se tocó`);
