@@ -4,6 +4,7 @@ import { BotonAccion } from "@/components/BotonAccion";
 import { ActivarAvisos } from "@/components/pwa/ActivarAvisos";
 import {
   Cargando,
+  claseBoton,
   Etiqueta,
   EtiquetaVencimiento,
   Seccion,
@@ -34,6 +35,14 @@ export default function Inicio() {
   return (
     <>
       <Titulo>Inicio</Titulo>
+      <div className="grid grid-cols-2 gap-3">
+        <Link href="/cargar/certificado" className={claseBoton}>
+          Cargar certificado
+        </Link>
+        <Link href="/cargar/fumigacion" className={claseBoton}>
+          Cargar fumigación
+        </Link>
+      </div>
       <ActivarAvisos compacto />
       <Suspense fallback={<Cargando />}>
         <Contenido />

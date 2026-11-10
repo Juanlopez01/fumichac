@@ -2,10 +2,10 @@ import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 
 export const claseBoton =
-  "inline-flex min-h-11 items-center justify-center rounded-lg bg-green-800 px-4 font-medium text-white transition-colors hover:bg-green-900 disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center rounded-lg px-4 py-2 text-center bg-green-800 font-medium text-white transition-colors hover:bg-green-900 disabled:opacity-60";
 
 export const claseBotonSecundario =
-  "inline-flex min-h-11 items-center justify-center rounded-lg border border-zinc-300 px-4 font-medium transition-colors hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-zinc-800";
+  "inline-flex min-h-11 items-center justify-center rounded-lg px-4 py-2 text-center border border-zinc-300 font-medium transition-colors hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-zinc-800";
 
 const claseEntrada =
   "w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2.5 text-base outline-none focus:border-green-800 focus:ring-1 focus:ring-green-800 dark:border-zinc-700";

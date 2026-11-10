@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { EstadoForm } from "@/lib/tipos";
+import type { EstadoForm, Fumigacion } from "@/lib/tipos";
 
 const ERROR_GUARDAR = "No se pudo guardar. Probá de nuevo.";
 const FK_VIOLADA = "23503";
@@ -70,6 +70,30 @@ export async function crearLocal(_: EstadoForm, datos: FormData): Promise<Estado
 
   refrescar();
   redirect(`/locales/${data.id}`);
+}
+
+/** Para la carga guiada: guarda el local y devuelve su id, sin salir de la pantalla. */
+export async function guardarLocal(datos: FormData): Promise<{ id?: string; error?: string }> {
+  const { valores, error: invalido } = leerLocal(datos);
+  if (!valores) return { error: invalido };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("locales").insert(valores).select("id").single();
+  if (error) return { error: ERROR_GUARDAR };
+
+  refrescar();
+  return { id: data.id };
+}
+
+export async function fumigacionesDelLocal(localId: string): Promise<Pick<Fumigacion, "id" | "fecha">[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("fumigaciones")
+    .select("id, fecha")
+    .eq("local_id", localId)
+    .order("fecha", { ascending: false });
+  if (error) throw error;
+  return data;
 }
 
 export async function editarLocal(
