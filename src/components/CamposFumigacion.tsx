@@ -1,4 +1,4 @@
-import { AreaTexto, Campo } from "@/components/ui";
+import { AreaTexto, Campo, CampoPrecio } from "@/components/ui";
 import type { Fumigacion } from "@/lib/tipos";
 
 export function CamposFumigacion({ fumigacion, hoy }: { fumigacion?: Fumigacion; hoy?: string }) {
@@ -23,6 +23,7 @@ export function CamposFumigacion({ fumigacion, hoy }: { fumigacion?: Fumigacion;
         defaultValue={fumigacion?.operarios ?? ""}
         required
       />
+      <CampoPrecio precio={fumigacion?.precio} />
       <AreaTexto
         etiqueta="Anotaciones"
         name="anotaciones"

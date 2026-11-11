@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Campo, claseBoton, MensajeError, Selector } from "@/components/ui";
+import { Campo, CampoPrecio, claseBoton, MensajeError, Selector } from "@/components/ui";
 import { formatearFecha } from "@/lib/avisos/calcular";
 import { editarCertificado, registrarCertificado } from "@/lib/acciones";
+import { ERROR_PRECIO, parsearPrecio } from "@/lib/precio";
 import { createClient } from "@/lib/supabase/client";
 import type { Certificado, Fumigacion } from "@/lib/tipos";
 
@@ -36,10 +37,15 @@ export function FormularioCertificado({ localId, fumigaciones, hoy, certificado 
     const hayArchivo = archivo !== null && archivo.size > 0;
     const fecha = String(datos.get("fecha") ?? "");
     const vencimiento = String(datos.get("vencimiento") ?? "");
+    const precio = parsearPrecio(String(datos.get("precio") ?? ""));
 
     // Se valida antes de subir el archivo, para no subirlo en vano.
     if (vencimiento < fecha) {
       setError("El vencimiento no puede ser anterior a la fecha del certificado.");
+      return;
+    }
+    if (precio === undefined) {
+      setError(ERROR_PRECIO);
       return;
     }
 
@@ -78,6 +84,7 @@ export function FormularioCertificado({ localId, fumigaciones, hoy, certificado 
       fecha,
       vencimiento,
       realizado_por: String(datos.get("realizado_por") ?? ""),
+      precio,
       archivo_path: ruta,
     };
     const resultado = certificado
@@ -114,6 +121,7 @@ export function FormularioCertificado({ localId, fumigaciones, hoy, certificado 
         defaultValue={certificado?.vencimiento}
         required
       />
+      <CampoPrecio precio={certificado?.precio} />
       <Selector
         etiqueta="Fumigación relacionada"
         name="fumigacion_id"

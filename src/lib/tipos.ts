@@ -13,6 +13,7 @@ export type Fumigacion = {
   id: string;
   fecha: string;
   veneno: string | null;
+  precio: number | null;
   operarios: string | null;
   anotaciones: string | null;
 };
@@ -24,6 +25,7 @@ export type Certificado = {
   fecha: string;
   vencimiento: string;
   realizado_por: string | null;
+  precio: number | null;
   archivo_path: string | null;
   archivado: boolean;
 };

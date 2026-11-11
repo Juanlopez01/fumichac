@@ -23,7 +23,7 @@ async function Contenido({ params }: { params: Props["params"] }) {
     supabase.from("locales").select("nombre, direccion").eq("id", id).maybeSingle(),
     supabase
       .from("certificados")
-      .select("id, local_id, fumigacion_id, fecha, vencimiento, realizado_por, archivo_path, archivado")
+      .select("id, local_id, fumigacion_id, fecha, vencimiento, realizado_por, precio, archivo_path, archivado")
       .eq("id", certificadoId)
       .eq("local_id", id)
       .maybeSingle(),

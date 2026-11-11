@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { ERROR_PRECIO, parsearPrecio } from "@/lib/precio";
 import { createClient } from "@/lib/supabase/server";
 import type { EstadoForm, Fumigacion } from "@/lib/tipos";
 
@@ -131,9 +132,11 @@ function leerFumigacion(datos: FormData) {
   if (!esFecha(fecha)) return { error: "Falta la fecha de la fumigación." };
   if (!veneno) return { error: "Falta el veneno utilizado." };
   if (!operarios) return { error: "Falta indicar quiénes fueron." };
+  const precio = parsearPrecio(texto(datos, "precio"));
+  if (precio === undefined) return { error: ERROR_PRECIO };
 
   return {
-    valores: { fecha, veneno, operarios, anotaciones: texto(datos, "anotaciones") || null },
+    valores: { fecha, veneno, operarios, precio, anotaciones: texto(datos, "anotaciones") || null },
   };
 }
 
@@ -204,10 +207,13 @@ type DatosCertificado = {
   fecha: string;
   vencimiento: string;
   realizado_por: string;
+  precio: number | null;
   archivo_path: string | null;
 };
 
 function validarCertificado(certificado: DatosCertificado): string | null {
+  const { precio } = certificado;
+  if (precio !== null && (!Number.isFinite(precio) || precio < 0)) return ERROR_PRECIO;
   if (!esFecha(certificado.fecha)) return "Falta la fecha del certificado.";
   if (!esFecha(certificado.vencimiento)) return "Falta la fecha de vencimiento.";
   if (certificado.vencimiento < certificado.fecha) {

@@ -24,7 +24,7 @@ async function Contenido({ params }: { params: Props["params"] }) {
     supabase.from("locales").select("nombre, direccion").eq("id", id).maybeSingle(),
     supabase
       .from("fumigaciones")
-      .select("id, fecha, veneno, operarios, anotaciones")
+      .select("id, fecha, veneno, operarios, precio, anotaciones")
       .eq("id", fumigacionId)
       .eq("local_id", id)
       .maybeSingle(),

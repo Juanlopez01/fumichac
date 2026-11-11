@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
+import { precioEditable } from "@/lib/precio";
 
 export const claseBoton =
   "inline-flex min-h-11 items-center justify-center rounded-lg px-4 py-2 text-center bg-green-800 font-medium text-white transition-colors hover:bg-green-900 disabled:opacity-60";
@@ -159,5 +160,18 @@ export function MensajeError({ children }: { children: ReactNode }) {
     <p role="alert" className="text-sm text-red-700 dark:text-red-400">
       {children}
     </p>
+  );
+}
+
+export function CampoPrecio({ precio }: { precio?: number | null }) {
+  return (
+    <Campo
+      etiqueta="Precio"
+      ayuda="Opcional. Por ejemplo 15000 o 15.000,50."
+      name="precio"
+      inputMode="decimal"
+      autoComplete="off"
+      defaultValue={precioEditable(precio)}
+    />
   );
 }

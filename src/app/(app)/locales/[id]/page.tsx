@@ -16,6 +16,7 @@ import {
 } from "@/components/ui";
 import { borrarFumigacion, borrarLocal, cambiarArchivado } from "@/lib/acciones";
 import { diasEntre, formatearFecha, hoyArgentina } from "@/lib/avisos/calcular";
+import { formatearPrecio } from "@/lib/precio";
 import { createClient } from "@/lib/supabase/server";
 import type { Certificado, Fumigacion, Local } from "@/lib/tipos";
 
@@ -39,12 +40,12 @@ async function Contenido({ params }: { params: PageProps<"/locales/[id]">["param
       .maybeSingle(),
     supabase
       .from("fumigaciones")
-      .select("id, fecha, veneno, operarios, anotaciones")
+      .select("id, fecha, veneno, operarios, precio, anotaciones")
       .eq("local_id", id)
       .order("fecha", { ascending: false }),
     supabase
       .from("certificados")
-      .select("id, local_id, fumigacion_id, fecha, vencimiento, realizado_por, archivo_path, archivado")
+      .select("id, local_id, fumigacion_id, fecha, vencimiento, realizado_por, precio, archivo_path, archivado")
       .eq("local_id", id)
       .order("vencimiento", { ascending: false }),
   ]);
@@ -114,6 +115,7 @@ async function Contenido({ params }: { params: PageProps<"/locales/[id]">["param
               </div>
               <Dato etiqueta="Fecha">{formatearFecha(c.fecha)}</Dato>
               <Dato etiqueta="Quién lo hizo">{c.realizado_por}</Dato>
+              <Dato etiqueta="Precio">{c.precio !== null && formatearPrecio(c.precio)}</Dato>
               {fumigacion && (
                 <p className="text-zinc-600 dark:text-zinc-400">
                   De la fumigación del {formatearFecha(fumigacion)}
@@ -159,6 +161,7 @@ async function Contenido({ params }: { params: PageProps<"/locales/[id]">["param
             <span className="font-medium">{formatearFecha(f.fecha)}</span>
             <Dato etiqueta="Veneno utilizado">{f.veneno}</Dato>
             <Dato etiqueta="Quiénes fueron">{f.operarios}</Dato>
+            <Dato etiqueta="Precio">{f.precio !== null && formatearPrecio(f.precio)}</Dato>
             <Dato etiqueta="Anotaciones">{f.anotaciones}</Dato>
             <div className="flex flex-wrap gap-2">
               <Link
