@@ -17,6 +17,7 @@ import {
 import { crearFumigacion, fumigacionesDelLocal, guardarLocal } from "@/lib/acciones";
 import { buscarCoincidencias } from "@/lib/buscar";
 import type { Fumigacion, Local } from "@/lib/tipos";
+import { usePaginaLista } from "@/lib/usePaginaLista";
 
 type Tipo = "certificado" | "fumigacion";
 type Paso = "local" | "confirmar" | "datos";
@@ -39,6 +40,7 @@ export function CargaGuiada({ tipo, locales, hoy }: { tipo: Tipo; locales: Local
   const [elegido, setElegido] = useState<LocalElegido | null>(null);
   const [error, setError] = useState<string>();
   const [guardando, iniciar] = useTransition();
+  const lista = usePaginaLista();
 
   const coincidencias = useMemo(
     () => buscarCoincidencias(locales, cargado).slice(0, MAXIMO_SUGERENCIAS),
@@ -90,6 +92,7 @@ export function CargaGuiada({ tipo, locales, hoy }: { tipo: Tipo; locales: Local
     <>
       {/* El formulario queda montado aunque esté oculto, para no perder lo escrito al volver. */}
       <form
+        method="post"
         onInput={(evento) => leer(evento.currentTarget)}
         onSubmit={continuar}
         className={paso === "local" ? "flex flex-col gap-4" : "hidden"}
@@ -113,7 +116,7 @@ export function CargaGuiada({ tipo, locales, hoy }: { tipo: Tipo; locales: Local
             ))}
           </Tarjeta>
         )}
-        <button type="submit" className={claseBoton}>
+        <button type="submit" disabled={!lista} className={claseBoton}>
           Continuar
         </button>
       </form>

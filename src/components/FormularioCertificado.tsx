@@ -7,6 +7,7 @@ import { editarCertificado, registrarCertificado } from "@/lib/acciones";
 import { ERROR_PRECIO, parsearPrecio } from "@/lib/precio";
 import { createClient } from "@/lib/supabase/client";
 import type { Certificado, Fumigacion } from "@/lib/tipos";
+import { usePaginaLista } from "@/lib/usePaginaLista";
 
 const EXTENSIONES: Record<string, string> = {
   "application/pdf": "pdf",
@@ -29,6 +30,7 @@ type Props = {
 export function FormularioCertificado({ localId, fumigaciones, hoy, certificado }: Props) {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string>();
+  const lista = usePaginaLista();
 
   async function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -100,7 +102,7 @@ export function FormularioCertificado({ localId, fumigaciones, hoy, certificado 
   }
 
   return (
-    <form onSubmit={enviar} className="flex flex-col gap-4">
+    <form method="post" onSubmit={enviar} className="flex flex-col gap-4">
       <Campo
         etiqueta="Quién lo hizo"
         name="realizado_por"
@@ -146,7 +148,7 @@ export function FormularioCertificado({ localId, fumigaciones, hoy, certificado 
         accept={Object.keys(EXTENSIONES).join(",")}
       />
       {error && <MensajeError>{error}</MensajeError>}
-      <button type="submit" disabled={enviando} className={claseBoton}>
+      <button type="submit" disabled={!lista || enviando} className={claseBoton}>
         {enviando ? "Guardando…" : certificado ? "Guardar cambios" : "Guardar certificado"}
       </button>
     </form>
